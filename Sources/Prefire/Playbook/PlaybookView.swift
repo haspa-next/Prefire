@@ -37,7 +37,7 @@ public struct PlaybookView: View {
             )
 
             ScrollView {
-                LazyVStack {
+                VStack {
                   ForEach(sectionNames.sorted(), id: \.self) { name in
                         if searchText.isEmpty || name.lowercased().contains(searchText.lowercased()) {
                             VStack(alignment: .leading) {
@@ -76,27 +76,29 @@ public struct PlaybookView: View {
 
     @ViewBuilder
     private func componentList(for name: String) -> some View {
-        HStack(alignment: .top, spacing: 16) {
-            ForEach($viewModels) { $viewModel in
-                if viewModel.name == name || viewModel.story == name {
-                    VStack {
-                        if !isComponent {
-                            Text(viewModel.name)
-                                .font(.callout.bold())
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(alignment: .top, spacing: 16) {
+                ForEach($viewModels) { $viewModel in
+                    if viewModel.name == name || viewModel.story == name {
+                        VStack {
+                            if !isComponent {
+                                Text(viewModel.name)
+                                  .font(.callout.bold())
+                            }
+                            PreviewView(
+                                isComponent: isComponent,
+                                selectedId: $selectedId,
+                                navigationLinkTriggered: $navigationLinkTriggered,
+                                viewModel: $viewModel,
+                                viewModels: $viewModels,
+                                sectionNames: $sectionNames
+                            )
                         }
-                        PreviewView(
-                            isComponent: isComponent,
-                            selectedId: $selectedId,
-                            navigationLinkTriggered: $navigationLinkTriggered,
-                            viewModel: $viewModel,
-                            viewModels: $viewModels,
-                            sectionNames: $sectionNames
-                        )
                     }
                 }
             }
+            .padding(16)
         }
-        .padding(16)
     }
 
     struct PreviewView: View, Identifiable {
