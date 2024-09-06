@@ -37,8 +37,8 @@ public struct PlaybookView: View {
             )
 
             ScrollView {
-                VStack {
-                    ForEach(sectionNames, id: \.self) { name in
+                LazyVStack {
+                  ForEach(sectionNames.sorted(), id: \.self) { name in
                         if searchText.isEmpty || name.lowercased().contains(searchText.lowercased()) {
                             VStack(alignment: .leading) {
                                 Text(isComponent ? name : "📙 \(name.capitalized)")
@@ -76,29 +76,27 @@ public struct PlaybookView: View {
 
     @ViewBuilder
     private func componentList(for name: String) -> some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(alignment: .top, spacing: 16) {
-                ForEach($viewModels) { $viewModel in
-                    if viewModel.name == name || viewModel.story == name {
-                        VStack {
-                            if !isComponent {
-                                Text(viewModel.name)
-                                    .font(.callout.bold())
-                            }
-                            PreviewView(
-                                isComponent: isComponent,
-                                selectedId: $selectedId,
-                                navigationLinkTriggered: $navigationLinkTriggered,
-                                viewModel: $viewModel,
-                                viewModels: $viewModels,
-                                sectionNames: $sectionNames
-                            )
+        HStack(alignment: .top, spacing: 16) {
+            ForEach($viewModels) { $viewModel in
+                if viewModel.name == name || viewModel.story == name {
+                    VStack {
+                        if !isComponent {
+                            Text(viewModel.name)
+                                .font(.callout.bold())
                         }
+                        PreviewView(
+                            isComponent: isComponent,
+                            selectedId: $selectedId,
+                            navigationLinkTriggered: $navigationLinkTriggered,
+                            viewModel: $viewModel,
+                            viewModels: $viewModels,
+                            sectionNames: $sectionNames
+                        )
                     }
                 }
             }
-            .padding(16)
         }
+        .padding(16)
     }
 
     struct PreviewView: View, Identifiable {
