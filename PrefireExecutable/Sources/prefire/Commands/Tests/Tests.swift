@@ -2,14 +2,14 @@ import ArgumentParser
 import Foundation
 
 extension Prefire {
-    struct Tests: ParsableCommand {
+    struct Tests: AsyncParsableCommand {
         static let configuration = CommandConfiguration(abstract: "Generate Snapshot/Accessibility Tests")
 
         @Argument(help: "Paths to a source swift files or directories.")
-        var sources: [String] = []
+        var sources: [String] = [FileManager.default.currentDirectoryPath]
 
         @Option(help: "Path to the sourcery.")
-        var sourcery: String
+        var sourcery: String?
         @Option(help: "Path to your custom template.")
         var template: String
 
@@ -34,10 +34,11 @@ extension Prefire {
         @Flag(help: "Display full info")
         var verbose = false
 
-        func run() throws {
+        func run() async throws {
             Logger.verbose = verbose
+            let config = Config.load(from: config, testTargetPath: testTargetPath, env: ProcessInfo.processInfo.environment)
 
-            try GenerateTestsCommand.run(
+            try await GenerateTestsCommand.run(
                 GeneratedTestsOptions(
                     sourcery: sourcery,
                     target: target,
@@ -49,7 +50,7 @@ extension Prefire {
                     cacheBasePath: cacheBasePath,
                     device: device,
                     osVersion: osVersion,
-                    config: Config.load(from: config, testTargetPath: testTargetPath, env: ProcessInfo.processInfo.environment)
+                    config: config
                 )
             )
         }

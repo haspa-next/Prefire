@@ -21,7 +21,7 @@ enum TestedTargetFinder {
                 }
             }
 
-        let targetNameFromConfig = loadTargetNameFromConfig(for: target.directory, targetName: target.name)
+        let targetNameFromConfig = loadTargetNameFromConfig(for: String(describing: target.directory), targetName: target.name)
         let potentialTargetName = target.name.replacingOccurrences(of: "Tests", with: "")
         let targetName = targetNameFromConfig ?? potentialTargetName
 
@@ -35,10 +35,10 @@ enum TestedTargetFinder {
     ///   - targetDirectory: Test target directory
     ///   - targetName: Test traget name
     /// - Returns: Target loaded from configuration file
-    private static func loadTargetNameFromConfig(for targetDirectory: Path, targetName: String) -> String? {
+    private static func loadTargetNameFromConfig(for targetDirectory: String, targetName: String) -> String? {
         let possibleConfigPaths = [
-            targetDirectory.appending(subpath: targetName).string,
-            targetDirectory.string
+            targetDirectory.appending("/\(targetName)"),
+            targetDirectory
         ]
 
         for configPath in possibleConfigPaths {
@@ -70,7 +70,7 @@ extension TestedTargetFinder {
             fatalError("`PrefireTestsPlugin` must be connected to the test target. \(target.displayName) is not a test target.")
         }
 
-        let targetNameFromConfig = loadTargetNameFromConfig(for: project.directory, targetName: target.displayName)
+        let targetNameFromConfig = loadTargetNameFromConfig(for: project.directoryURL.path, targetName: target.displayName)
         let potentialTargetName = target.displayName.replacingOccurrences(of: "Tests", with: "")
         let targetName = targetNameFromConfig ?? potentialTargetName
 
@@ -81,9 +81,14 @@ extension TestedTargetFinder {
 
 extension XcodeTarget {
     var isTestKind: Bool {
-        if case .other("com.apple.product-type.bundle.unit-test") = product?.kind {
+        guard let kind = product?.kind
+        else { return false }
+
+        switch kind {
+        case .other("com.apple.product-type.bundle.unit-test"),
+             .other("com.apple.product-type.bundle.ui-testing"):
             return true
-        } else {
+        default:
             return false
         }
     }

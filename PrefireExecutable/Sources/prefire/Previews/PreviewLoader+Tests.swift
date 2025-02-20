@@ -5,8 +5,8 @@ extension PreviewLoader {
     private static let yamlSettings = "|-4\n\n"
     private static let previewSpaces = "            "
 
-    static func loadPreviewBodies(for sources: [String], defaultEnabled: Bool) -> String? {
-        guard let findedBodies = loadRawPreviewBodies(for: sources, defaultEnabled: defaultEnabled) else { return nil }
+    static func loadPreviewBodies(for sources: [String], defaultEnabled: Bool) async -> String? {
+        guard let findedBodies = await loadRawPreviewBodies(for: sources, defaultEnabled: defaultEnabled) else { return nil }
 
         let result = findedBodies
             .sorted(by: { $0.key > $1.key })
@@ -27,7 +27,7 @@ extension PreviewLoader {
                         let preview = {
             \(rawPreviewModel.body)
                         }
-                        if let failure = assertSnapshots(matching: preview(), name: "\(rawPreviewModel.displayName)", isScreen: \(isScreen), device: deviceConfig) {
+                        if let failure = assertSnapshots(for: PrefireSnapshot(preview(), name: "\(rawPreviewModel.displayName)", isScreen: \(isScreen), device: deviceConfig)) {
                             XCTFail(failure)
                         }
                     }

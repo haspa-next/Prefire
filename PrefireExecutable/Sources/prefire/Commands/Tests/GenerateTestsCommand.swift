@@ -6,7 +6,7 @@ private enum Constants {
 }
 
 struct GeneratedTestsOptions {
-    var sourcery: String
+    var sourcery: String?
     var target: String?
     var testTarget: String?
     var template: String
@@ -22,7 +22,7 @@ struct GeneratedTestsOptions {
     var testableImports: [String]?
 
     init(
-        sourcery: String,
+        sourcery: String?,
         target: String?,
         testTarget: String?,
         template: String,
@@ -77,24 +77,27 @@ enum GenerateTestsCommand {
         static let previewsMacros = "previewsMacros"
     }
 
-    static func run(_ options: GeneratedTestsOptions) throws {
+    static func run(_ options: GeneratedTestsOptions) async throws {
         let task = Process()
-        task.executableURL = URL(filePath: options.sourcery)
+        task.executableURL = URL(filePath: options.sourcery ?? "/usr/bin/env")
 
-        let rawArguments = makeArguments(for: options)
+        let rawArguments = await makeArguments(for: options)
         let yamlContent = YAMLParser().string(from: rawArguments)
         let filePath = (options.cacheBasePath?.appending("/") ?? FileManager.default.temporaryDirectory.path())
             .appending(Constants.configFileName)
 
         yamlContent.rewrite(toFile: URL(string: filePath))
 
-        task.arguments =  ["--config", filePath]
+        task.arguments = ["--config", filePath]
+        if options.sourcery == nil {
+            task.arguments?.insert("sourcery", at: 0)
+        }
 
         try task.run()
         task.waitUntilExit()
     }
 
-    static func makeArguments(for options: GeneratedTestsOptions) -> [String: Any?] {
+    static func makeArguments(for options: GeneratedTestsOptions) async -> [String: Any?] {
         let sources = options.sources
         let output = options.output ?? FileManager.default.currentDirectoryPath.appending("/\(Constants.snapshotFileName).generated.swift")
         let snapshotOutput = options.testTargetPath?.appending("/\(Constants.snapshotFileName).swift")
@@ -104,7 +107,7 @@ enum GenerateTestsCommand {
             Prefire configuration
                 ➜ Target used for tests: \(options.target ?? "nil")
                 ➜ Tests target: \(options.testTarget ?? "nil")
-                ➜ Sourcery path: \(options.sourcery)
+                ➜ Sourcery path: \(options.sourcery ?? "nil")
                 ➜ Template path: \(options.template)
                 ➜ Generated test path: \(output)
                 ➜ Snapshot resources path: \(snapshotOutput ?? "nil")
@@ -113,11 +116,7 @@ enum GenerateTestsCommand {
         )
 
         // Works with `#Preview` macro
-        #if swift(>=5.9)
-            let previewBodies = PreviewLoader.loadPreviewBodies(for: sources, defaultEnabled: options.prefireEnabledMarker)
-        #else
-            let previewBodies: String? = nil
-        #endif
+        let previewBodies = await PreviewLoader.loadPreviewBodies(for: sources, defaultEnabled: options.prefireEnabledMarker)
 
         let arguments: [String: Any?] = [
             Keys.output: output,
